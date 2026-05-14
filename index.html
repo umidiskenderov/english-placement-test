@@ -490,6 +490,36 @@
   .info-item { background: white; border: 1px solid #ede8df; border-radius: 12px; padding: 20px 14px; }
   .info-item .ii-num { font-size: 1.8rem; font-weight: 700; color: var(--gold); }
   .info-item .ii-label { font-size: .78rem; color: #888; margin-top: 4px; }
+  .name-wrap {
+    margin-bottom: 28px;
+    text-align: left;
+  }
+  .name-wrap label {
+    display: block;
+    font-size: .85rem;
+    font-weight: 700;
+    color: #666;
+    letter-spacing: .5px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .name-wrap input {
+    width: 100%;
+    padding: 14px 18px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    color: var(--ink);
+    background: white;
+    transition: border-color .2s;
+    outline: none;
+  }
+  .name-wrap input:focus { border-color: var(--gold); }
+  .name-wrap input.error { border-color: var(--wrong); }
+  .name-error { color: var(--wrong); font-size: .82rem; margin-top: 6px; display: none; }
+  .name-error.show { display: block; }
+
   #start-btn {
     background: var(--ink);
     color: white;
@@ -504,6 +534,34 @@
     letter-spacing: .3px;
   }
   #start-btn:hover { background: #2d2d4a; }
+
+  /* sending overlay */
+  #sending-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(10,10,20,.55);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  #sending-overlay.show { display: flex; }
+  #sending-box {
+    background: white;
+    border-radius: 16px;
+    padding: 40px 48px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  }
+  #sending-box p { font-size: 1rem; color: #555; margin-top: 12px; }
+  .spinner {
+    width: 44px; height: 44px;
+    border: 4px solid #eee;
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin: 0 auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   #test-page { display: none; }
   #test-page.show { display: block; }
@@ -529,6 +587,14 @@
   <div id="timer-box">⏱ --:--</div>
 </header>
 
+<!-- SENDING OVERLAY -->
+<div id="sending-overlay">
+  <div id="sending-box">
+    <div class="spinner"></div>
+    <p>Saving your results...</p>
+  </div>
+</div>
+
 <!-- WELCOME -->
 <div id="welcome-page">
   <div class="section-badge">Ready to begin?</div>
@@ -539,6 +605,11 @@
     <div class="info-item"><div class="ii-num">60</div><div class="ii-label">Questions</div></div>
     <div class="info-item"><div class="ii-num">45</div><div class="ii-label">Minutes</div></div>
     <div class="info-item"><div class="ii-num">A1–C1</div><div class="ii-label">Levels</div></div>
+  </div>
+  <div class="name-wrap">
+    <label for="student-name">Your Full Name</label>
+    <input type="text" id="student-name" placeholder="e.g. Ali Karimov" autocomplete="name" />
+    <div class="name-error" id="name-error">Please enter your name before starting.</div>
   </div>
   <button id="start-btn" onclick="startTest()">Start Test →</button>
 </div>
@@ -710,12 +781,16 @@ const SECTIONS = [
   }
 ];
 
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbx8kmeaEv-fi3yCcehLHe0drvqy40uy4moxR_DRIzQHIa4RFdGa9c3MgDZYMbeTCmhJ/exec';
+
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const PASS_THRESHOLD = 11; // 11/15 = ~73% (≥70%)
+let studentName = '';
 let userAnswers = Array(4).fill(null).map(() => Array(15).fill(null));
-let sectionUnlocked = [true, false, false, false]; // only section 1 starts open
-let sectionSubmitted = [false, false, false, false]; // locked after grading
-let lastUnlockedSection = 0; // highest section reached
+let sectionUnlocked = [true, false, false, false];
+let sectionSubmitted = [false, false, false, false];
+let lastUnlockedSection = 0;
 let currentSection = 0;
 let currentQ = 0;
 let timerInterval = null;
@@ -910,15 +985,51 @@ function submitSection() {
   }
 }
 
+// ── SEND RESULTS TO GOOGLE SHEET ──────────────────────────────────────────────
+async function sendResults(sectionScores, total, sectionsCompleted, level) {
+  document.getElementById('sending-overlay').classList.add('show');
+  const payload = {
+    name: studentName,
+    s1: sectionScores[0],
+    s2: sectionScores[1],
+    s3: sectionScores[2],
+    s4: sectionScores[3],
+    total,
+    sectionsCompleted,
+    level
+  };
+  try {
+    await fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (err) {
+    console.warn('Could not send results:', err);
+  }
+  document.getElementById('sending-overlay').classList.remove('show');
+}
+
 function showFailResults() {
   document.getElementById('fail-overlay').classList.remove('show');
   document.getElementById('test-page').style.display = 'none';
-  buildResults();
+  buildResults(true);
   document.getElementById('results-page').classList.add('show');
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
-// ── TIMER ─────────────────────────────────────────────────────────────────────
+function submitTest() {
+  const unanswered = userAnswers[currentSection].filter(a => a === null).length;
+  if (unanswered > 0) { showConfirm(); return; }
+  sectionSubmitted[currentSection] = true;
+  clearInterval(timerInterval);
+  hideConfirm();
+  document.getElementById('test-page').style.display = 'none';
+  buildResults(false);
+  document.getElementById('results-page').classList.add('show');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
 function startTimer() {
   timerInterval = setInterval(() => {
     secondsLeft--;
@@ -933,6 +1044,19 @@ function startTimer() {
 
 // ── FLOW ──────────────────────────────────────────────────────────────────────
 function startTest() {
+  const nameInput = document.getElementById('student-name');
+  const nameError = document.getElementById('name-error');
+  const name = nameInput.value.trim();
+  if (!name) {
+    nameInput.classList.add('error');
+    nameError.classList.add('show');
+    nameInput.focus();
+    return;
+  }
+  nameInput.classList.remove('error');
+  nameError.classList.remove('show');
+  studentName = name;
+
   document.getElementById('welcome-page').style.display = 'none';
   document.getElementById('test-page').classList.add('show');
   currentSection = 0; currentQ = 0;
@@ -958,19 +1082,6 @@ function hideConfirm() {
   document.getElementById('confirm-overlay').classList.remove('show');
 }
 
-function submitTest() {
-  // Final section submit
-  const unanswered = userAnswers[currentSection].filter(a => a === null).length;
-  if (unanswered > 0) { showConfirm(); return; }
-  sectionSubmitted[currentSection] = true;
-  clearInterval(timerInterval);
-  hideConfirm();
-  document.getElementById('test-page').style.display = 'none';
-  buildResults();
-  document.getElementById('results-page').classList.add('show');
-  window.scrollTo({top:0, behavior:'smooth'});
-}
-
 function restartTest() {
   document.getElementById('results-page').classList.remove('show');
   document.getElementById('welcome-page').style.display = 'block';
@@ -978,7 +1089,7 @@ function restartTest() {
   document.getElementById('test-page').style.display = '';
   document.getElementById('timer-box').textContent = '⏱ --:--';
   document.getElementById('timer-box').classList.remove('warn');
-  // Reset lock icons
+  document.getElementById('student-name').value = '';
   [1,2,3].forEach(si => {
     const lock = document.getElementById('tab-lock-'+si);
     if (lock) lock.style.display = '';
@@ -999,8 +1110,7 @@ function getLevel(score, sectionsCompleted) {
   return 'C2 — Proficient';
 }
 
-function buildResults() {
-  // Only score sections that were submitted
+function buildResults(sendToSheet = true) {
   const sectionScores = SECTIONS.map((sec, si) => {
     if (!sectionSubmitted[si]) return null;
     let correct = 0;
@@ -1015,12 +1125,25 @@ function buildResults() {
   const total = completedSections.reduce((a,b)=>a+b,0);
   const totalPossible = sectionsCompleted * 15;
   const lastScore = completedSections[completedSections.length - 1];
+  const level = getLevel(lastScore, sectionsCompleted);
+
+  // Send to Google Sheet
+  if (sendToSheet) sendResults(sectionScores, total, sectionsCompleted, level);
 
   document.getElementById('total-score').textContent = total;
   document.querySelector('.out-of').textContent = `out of ${totalPossible} correct (${sectionsCompleted} section${sectionsCompleted>1?'s':''} completed)`;
-  document.getElementById('level-badge').textContent = getLevel(lastScore, sectionsCompleted);
+  document.getElementById('level-badge').textContent = level;
 
-  // section score cards — only completed
+  // Show student name in results hero
+  let nameEl = document.getElementById('results-name');
+  if (!nameEl) {
+    nameEl = document.createElement('div');
+    nameEl.id = 'results-name';
+    nameEl.style.cssText = 'font-size:1rem;color:rgba(255,255,255,.7);margin-bottom:4px;';
+    document.querySelector('.results-hero h2').before(nameEl);
+  }
+  nameEl.textContent = studentName;
+
   const scDiv = document.getElementById('section-scores');
   scDiv.innerHTML = '';
   scDiv.style.gridTemplateColumns = `repeat(${sectionsCompleted}, 1fr)`;
@@ -1038,7 +1161,6 @@ function buildResults() {
     scDiv.appendChild(card);
   });
 
-  // detailed review — only completed sections
   const revDiv = document.getElementById('review-sections');
   revDiv.innerHTML = '';
   SECTIONS.forEach((sec, si) => {
@@ -1105,7 +1227,6 @@ function buildResults() {
     wrapper.appendChild(body);
     revDiv.appendChild(wrapper);
 
-    // auto-open last section (the one they struggled with)
     header.classList.add('open');
     body.classList.add('open');
   });
