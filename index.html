@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Placement Test</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #faf8f4;
+    --cream: #f0ece3;
+    --gold: #c9a84c;
+    --gold-light: #e8d5a3;
+    --correct: #2d7a4f;
+    --correct-bg: #e8f5ee;
+    --wrong: #b03030;
+    --wrong-bg: #fceaea;
+    --unanswered: #666;
+    --unanswered-bg: #f0f0f0;
+    --section-colors: #4a6fa5, #6b4fa5, #a54f6b, #4fa58a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--ink);
+    color: white;
+    padding: 28px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,.3);
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    letter-spacing: .5px;
+  }
+  header h1 span { color: var(--gold); }
+
+  #timer-box {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: .95rem;
+    font-weight: 500;
+    letter-spacing: 1px;
+  }
+  #timer-box.warn { color: #ff8080; border-color: #ff8080; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+  /* ── PROGRESS BAR ── */
+  #progress-wrap {
+    background: var(--cream);
+    border-bottom: 1px solid #ddd;
+    padding: 14px 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  #progress-label { font-size: .82rem; font-weight: 600; color: #666; white-space: nowrap; }
+  #progress-track {
+    flex: 1;
+    height: 8px;
+    background: #ddd;
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  #progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), #e8b84b);
+    border-radius: 99px;
+    transition: width .4s ease;
+    width: 0%;
+  }
+  #progress-count { font-size: .82rem; color: #888; white-space: nowrap; }
+
+  /* ── SECTION TABS ── */
+  #section-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 18px 40px 0;
+    background: var(--paper);
+    border-bottom: 2px solid #e0dbd0;
+  }
+  .tab-btn {
+    padding: 10px 24px;
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .88rem;
+    font-weight: 600;
+    color: #888;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    position: relative;
+    bottom: -2px;
+    border: 2px solid transparent;
+    border-bottom: none;
+    transition: all .2s;
+  }
+  .tab-btn:hover { color: var(--ink); background: var(--cream); }
+  .tab-btn.active {
+    color: var(--ink);
+    background: var(--paper);
+    border-color: #e0dbd0;
+    border-bottom-color: var(--paper);
+  }
+  .tab-btn .tab-check { margin-left: 6px; font-size: .7rem; }
+  .tab-btn.locked {
+    opacity: .38;
+    cursor: not-allowed;
+    color: #aaa;
+  }
+  .tab-btn.locked:hover { background: transparent; color: #aaa; }
+  .tab-btn .lock-icon { margin-left: 6px; font-size: .75rem; }
+
+  /* ── SECTION FAIL OVERLAY ── */
+  #fail-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(10,10,20,.65);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+  }
+  #fail-overlay.show { display: flex; }
+  #fail-box {
+    background: white;
+    border-radius: 20px;
+    padding: 44px 52px;
+    text-align: center;
+    max-width: 460px;
+    width: 90%;
+    box-shadow: 0 24px 64px rgba(0,0,0,.3);
+  }
+  .fail-icon { font-size: 3rem; margin-bottom: 16px; }
+  #fail-box h2 { font-family: 'Playfair Display', serif; font-size: 1.7rem; margin-bottom: 10px; color: var(--wrong); }
+  #fail-box .fail-score { font-size: 2.6rem; font-weight: 700; color: var(--ink); margin: 14px 0 6px; }
+  #fail-box .fail-sub { color: #888; font-size: .95rem; line-height: 1.6; margin-bottom: 28px; }
+  #fail-box .fail-threshold { display: inline-block; background: #fff3f3; color: var(--wrong); border: 1px solid #f5c0c0; border-radius: 8px; padding: 8px 20px; font-size: .88rem; font-weight: 600; margin-bottom: 24px; }
+
+  /* section-submit btn variant */
+  .nav-btn.section-submit-btn {
+    background: #2d7a4f;
+    border-color: #2d7a4f;
+    color: white;
+    font-size: 1rem;
+    padding: 14px 36px;
+  }
+  .nav-btn.section-submit-btn:hover { background: #245f3e; border-color: #245f3e; }
+
+  /* ── MAIN LAYOUT ── */
+  #main { display: flex; max-width: 1100px; margin: 0 auto; padding: 36px 40px 80px; gap: 36px; }
+
+  /* ── QUESTION GRID (sidebar) ── */
+  #q-grid-wrap {
+    width: 200px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 88px;
+    align-self: flex-start;
+  }
+  #q-grid-title { font-size: .75rem; font-weight: 700; letter-spacing: 1px; color: #999; text-transform: uppercase; margin-bottom: 10px; }
+  #q-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+  }
+  .qnum-btn {
+    aspect-ratio: 1;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    color: #aaa;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qnum-btn:hover { border-color: var(--gold); color: var(--ink); }
+  .qnum-btn.answered { background: var(--gold-light); border-color: var(--gold); color: var(--ink); }
+  .qnum-btn.current { background: var(--gold); border-color: var(--gold); color: white; }
+
+  /* ── QUESTION CARD ── */
+  #q-area { flex: 1; min-width: 0; }
+
+  .section-badge {
+    display: inline-block;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: white;
+    background: var(--ink);
+    padding: 4px 12px;
+    border-radius: 99px;
+    margin-bottom: 18px;
+  }
+
+  #question-card {
+    background: white;
+    border-radius: 16px;
+    padding: 36px 40px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.07);
+    border: 1px solid #ede8df;
+    animation: fadeIn .3s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  #q-number {
+    font-size: .8rem;
+    font-weight: 600;
+    color: #bbb;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  #q-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    line-height: 1.6;
+    margin-bottom: 28px;
+    color: var(--ink);
+  }
+  #q-text em {
+    font-style: normal;
+    border-bottom: 2px dashed var(--gold);
+    padding-bottom: 1px;
+  }
+
+  .options-list { display: flex; flex-direction: column; gap: 12px; }
+  .option-label {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    border: 2px solid #e8e3da;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all .18s;
+    font-size: .97rem;
+    font-weight: 400;
+    color: var(--ink);
+    background: var(--paper);
+    user-select: none;
+  }
+  .option-label:hover { border-color: var(--gold); background: #fffbf2; }
+  .option-label input { display: none; }
+  .option-label.selected {
+    background: #fffbf0;
+    border-color: var(--gold);
+    font-weight: 600;
+  }
+  .opt-letter {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--cream);
+    border: 2px solid #ddd;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all .18s;
+    color: #888;
+  }
+  .option-label.selected .opt-letter {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: white;
+  }
+
+  /* ── NAV BUTTONS ── */
+  #nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+  }
+  .nav-btn {
+    padding: 12px 28px;
+    border: 2px solid var(--ink);
+    border-radius: 10px;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .18s;
+    color: var(--ink);
+  }
+  .nav-btn:hover { background: var(--ink); color: white; }
+  .nav-btn:disabled { opacity: .3; cursor: not-allowed; }
+  .nav-btn.primary {
+    background: var(--ink);
+    color: white;
+  }
+  .nav-btn.primary:hover { background: #2d2d4a; }
+  .nav-btn.submit-btn {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: white;
+    font-size: 1rem;
+    padding: 14px 36px;
+  }
+  .nav-btn.submit-btn:hover { background: #b8903d; border-color: #b8903d; }
+
+  /* ── CONFIRM OVERLAY ── */
+  #confirm-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+  }
+  #confirm-overlay.show { display: flex; }
+  #confirm-box {
+    background: white;
+    border-radius: 20px;
+    padding: 40px 48px;
+    text-align: center;
+    max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  }
+  #confirm-box h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; margin-bottom: 12px; }
+  #confirm-box p { color: #666; margin-bottom: 28px; line-height: 1.6; }
+  #confirm-box .btn-row { display: flex; gap: 14px; justify-content: center; }
+
+  /* ── RESULTS PAGE ── */
+  #results-page { display: none; max-width: 900px; margin: 0 auto; padding: 48px 40px 80px; }
+  #results-page.show { display: block; }
+
+  .results-hero {
+    text-align: center;
+    background: var(--ink);
+    color: white;
+    border-radius: 20px;
+    padding: 48px 40px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .results-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, var(--gold) 0%, transparent 70%);
+    opacity: .2;
+  }
+  .results-hero h2 { font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 8px; }
+  .results-hero .total-score { font-size: 4rem; font-weight: 700; color: var(--gold); line-height: 1; margin: 16px 0 8px; }
+  .results-hero .out-of { color: rgba(255,255,255,.6); font-size: 1rem; }
+  .results-hero .level-badge {
+    display: inline-block;
+    background: var(--gold);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: .95rem;
+    padding: 6px 20px;
+    border-radius: 99px;
+    margin-top: 14px;
+    letter-spacing: .5px;
+  }
+
+  .section-scores { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }
+  .score-card {
+    background: white;
+    border-radius: 14px;
+    padding: 24px 20px;
+    text-align: center;
+    border: 1px solid #ede8df;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+  }
+  .score-card .sc-label { font-size: .75rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #999; margin-bottom: 8px; }
+  .score-card .sc-num { font-size: 2.2rem; font-weight: 700; color: var(--ink); line-height: 1; }
+  .score-card .sc-bar { height: 6px; background: #eee; border-radius: 99px; margin-top: 10px; overflow: hidden; }
+  .score-card .sc-fill { height: 100%; border-radius: 99px; background: var(--gold); }
+
+  /* ── REVIEW SECTION ── */
+  .review-section { margin-bottom: 36px; }
+  .review-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-radius: 12px 12px 0 0;
+    cursor: pointer;
+    user-select: none;
+  }
+  .review-header h3 { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: white; }
+  .review-header .score-pill {
+    background: rgba(255,255,255,.25);
+    color: white;
+    padding: 4px 14px;
+    border-radius: 99px;
+    font-size: .85rem;
+    font-weight: 600;
+  }
+  .review-header .toggle-arrow { color: white; font-size: 1.2rem; transition: transform .3s; }
+  .review-header.open .toggle-arrow { transform: rotate(180deg); }
+
+  .review-body {
+    background: white;
+    border: 1px solid #ede8df;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .4s ease;
+  }
+  .review-body.open { max-height: 9999px; }
+
+  .review-item {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f0ece3;
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+  .review-item:last-child { border-bottom: none; }
+
+  .ri-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .78rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .ri-num.correct { background: var(--correct-bg); color: var(--correct); }
+  .ri-num.wrong { background: var(--wrong-bg); color: var(--wrong); }
+  .ri-num.unanswered { background: var(--unanswered-bg); color: var(--unanswered); }
+
+  .ri-content .ri-q { font-size: .92rem; color: var(--ink); margin-bottom: 8px; line-height: 1.5; }
+  .ri-answers { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ri-answer-tag {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: .8rem;
+    font-weight: 600;
+  }
+  .ri-answer-tag.student-correct { background: var(--correct-bg); color: var(--correct); }
+  .ri-answer-tag.student-wrong { background: var(--wrong-bg); color: var(--wrong); }
+  .ri-answer-tag.student-none { background: var(--unanswered-bg); color: var(--unanswered); }
+  .ri-answer-tag.correct-ans { background: #e3f0ff; color: #2455a4; }
+
+  #restart-btn {
+    display: block;
+    margin: 40px auto 0;
+    padding: 15px 48px;
+    background: var(--ink);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  #restart-btn:hover { background: #2d2d4a; }
+
+  /* ── WELCOME SCREEN ── */
+  #welcome-page {
+    max-width: 680px;
+    margin: 80px auto;
+    text-align: center;
+    padding: 0 40px;
+  }
+  #welcome-page h2 { font-family: 'Playfair Display', serif; font-size: 2.4rem; margin-bottom: 16px; }
+  #welcome-page p { color: #666; font-size: 1.05rem; line-height: 1.7; margin-bottom: 32px; }
+  .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 40px; }
+  .info-item { background: white; border: 1px solid #ede8df; border-radius: 12px; padding: 20px 14px; }
+  .info-item .ii-num { font-size: 1.8rem; font-weight: 700; color: var(--gold); }
+  .info-item .ii-label { font-size: .78rem; color: #888; margin-top: 4px; }
+  #start-btn {
+    background: var(--ink);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 56px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+    letter-spacing: .3px;
+  }
+  #start-btn:hover { background: #2d2d4a; }
+
+  #test-page { display: none; }
+  #test-page.show { display: block; }
+
+  @media (max-width: 720px) {
+    header { padding: 18px 20px; }
+    #progress-wrap { padding: 12px 20px; }
+    #section-tabs { padding: 14px 20px 0; overflow-x: auto; }
+    #main { flex-direction: column; padding: 20px; }
+    #q-grid-wrap { width: 100%; position: static; }
+    #q-grid { grid-template-columns: repeat(8, 1fr); }
+    #question-card { padding: 24px 20px; }
+    .section-scores { grid-template-columns: repeat(2, 1fr); }
+    .info-grid { grid-template-columns: repeat(2, 1fr); }
+    #results-page, #welcome-page { padding: 30px 20px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>English <span>Placement</span> Test</h1>
+  <div id="timer-box">⏱ --:--</div>
+</header>
+
+<!-- WELCOME -->
+<div id="welcome-page">
+  <div class="section-badge">Ready to begin?</div>
+  <h2>English Level Assessment</h2>
+  <p>This test has <strong>4 sections</strong> with 15 questions each. Answer every question carefully — you can navigate between questions and sections freely before submitting.</p>
+  <div class="info-grid">
+    <div class="info-item"><div class="ii-num">4</div><div class="ii-label">Sections</div></div>
+    <div class="info-item"><div class="ii-num">60</div><div class="ii-label">Questions</div></div>
+    <div class="info-item"><div class="ii-num">45</div><div class="ii-label">Minutes</div></div>
+    <div class="info-item"><div class="ii-num">A1–C1</div><div class="ii-label">Levels</div></div>
+  </div>
+  <button id="start-btn" onclick="startTest()">Start Test →</button>
+</div>
+
+<!-- TEST -->
+<div id="test-page">
+  <div id="progress-wrap">
+    <span id="progress-label">Progress</span>
+    <div id="progress-track"><div id="progress-fill"></div></div>
+    <span id="progress-count">0 / 60</span>
+  </div>
+
+  <div id="section-tabs">
+    <button class="tab-btn active" onclick="tryGoToSection(0)" id="tab-0">Section 1 <span class="tab-check" id="tab-check-0"></span></button>
+    <button class="tab-btn locked" onclick="tryGoToSection(1)" id="tab-1">Section 2 <span class="lock-icon" id="tab-lock-1">🔒</span><span class="tab-check" id="tab-check-1"></span></button>
+    <button class="tab-btn locked" onclick="tryGoToSection(2)" id="tab-2">Section 3 <span class="lock-icon" id="tab-lock-2">🔒</span><span class="tab-check" id="tab-check-2"></span></button>
+    <button class="tab-btn locked" onclick="tryGoToSection(3)" id="tab-3">Section 4 <span class="lock-icon" id="tab-lock-3">🔒</span><span class="tab-check" id="tab-check-3"></span></button>
+  </div>
+
+  <div id="main">
+    <div id="q-grid-wrap">
+      <div id="q-grid-title">Questions</div>
+      <div id="q-grid"></div>
+    </div>
+
+    <div id="q-area">
+      <div id="question-card">
+        <div id="q-number"></div>
+        <div id="q-text"></div>
+        <div class="options-list" id="options-list"></div>
+      </div>
+      <div id="nav-row">
+        <button class="nav-btn" id="btn-prev" onclick="navigate(-1)">← Previous</button>
+        <button class="nav-btn primary" id="btn-next" onclick="navigate(1)">Next →</button>
+        <button class="nav-btn section-submit-btn" id="btn-section-submit" onclick="submitSection()" style="display:none">Submit Section →</button>
+        <button class="nav-btn submit-btn" id="btn-submit" onclick="submitTest()" style="display:none">Submit Test ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION FAIL -->
+<div id="fail-overlay">
+  <div id="fail-box">
+    <div class="fail-icon">📋</div>
+    <h2>Section Not Passed</h2>
+    <div class="fail-score" id="fail-score-display">0 / 15</div>
+    <div class="fail-threshold">Minimum required: 11 / 15 (70%)</div>
+    <div class="fail-sub" id="fail-sub-text">You need at least 70% to move on to the next section. Your test has ended here.</div>
+    <button class="nav-btn submit-btn" onclick="showFailResults()" style="background:#b03030;border-color:#b03030;">View My Results</button>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <h2>Submit Test?</h2>
+    <p id="confirm-msg">Make sure you've answered all questions before submitting.</p>
+    <div class="btn-row">
+      <button class="nav-btn" onclick="hideConfirm()">Go Back</button>
+      <button class="nav-btn submit-btn" onclick="submitTest()">Yes, Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="results-page">
+  <div class="results-hero">
+    <h2>Test Complete!</h2>
+    <div class="total-score" id="total-score">0</div>
+    <div class="out-of">out of 60 correct</div>
+    <div class="level-badge" id="level-badge">Calculating...</div>
+  </div>
+  <div class="section-scores" id="section-scores"></div>
+  <div id="review-sections"></div>
+  <button id="restart-btn" onclick="restartTest()">↺ Take Test Again</button>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const SECTIONS = [
+  {
+    title: "Section 1",
+    color: "#4a6fa5",
+    questions: [
+      { q: "She ___ my best friend.", opts: ["am","is","are"] },
+      { q: "They ___ playing outside.", opts: ["is","are","am"] },
+      { q: "I ___ a student.", opts: ["is","are","am"] },
+      { q: "He ___ to school every day.", opts: ["go","goes","going"] },
+      { q: "We ___ dinner at 7 PM.", opts: ["have","has","having"] },
+      { q: "This is ___ apple.", opts: ["a","an","the"] },
+      { q: "She has ___ dog.", opts: ["a","an","the"] },
+      { q: "___ are you from?", opts: ["What","Where","When"] },
+      { q: "I ___ like coffee.", opts: ["do not","does","did"] },
+      { q: "He ___ not understand.", opts: ["do","does","is"] },
+      { q: "There ___ many books on the table.", opts: ["is","are","am"] },
+      { q: "She ___ watching TV now.", opts: ["is","are","am"] },
+      { q: "We ___ to the park yesterday.", opts: ["go","goes","went"] },
+      { q: "I have ___ friends.", opts: ["much","many","any"] },
+      { q: "This book is ___ than that one.", opts: ["big","bigger","biggest"] },
+    ],
+    answers: [1,1,2,1,0,1,0,1,0,1,1,0,2,1,1] // 0-indexed (a=0,b=1,c=2)
+  },
+  {
+    title: "Section 2",
+    color: "#6b4fa5",
+    questions: [
+      { q: "She ___ already finished her homework.", opts: ["have","has","having"] },
+      { q: "They ___ to the cinema last night.", opts: ["go","went","gone"] },
+      { q: "I ___ never been to Paris.", opts: ["have","has","had"] },
+      { q: "He ___ playing football when it started to rain.", opts: ["was","were","is"] },
+      { q: "We ___ dinner when the phone rang.", opts: ["have","had","were having"] },
+      { q: "There isn't ___ milk left.", opts: ["some","any","many"] },
+      { q: "She is ___ than her brother.", opts: ["tall","taller","tallest"] },
+      { q: "This is the ___ movie I have ever seen.", opts: ["good","better","best"] },
+      { q: "I ___ get up early on weekdays.", opts: ["must","must to","musts"] },
+      { q: "He ___ speak three languages.", opts: ["can","cans","can to"] },
+      { q: "If it rains, we ___ stay at home.", opts: ["will","would","are"] },
+      { q: "She ___ to school by bus every day.", opts: ["go","goes","going"] },
+      { q: "I'm looking ___ my keys.", opts: ["at","for","on"] },
+      { q: "They have lived here ___ five years.", opts: ["since","for","during"] },
+      { q: "The book ___ is on the table is mine.", opts: ["who","which","where"] },
+    ],
+    answers: [1,1,0,0,2,1,1,2,0,0,0,1,1,1,1]
+  },
+  {
+    title: "Section 3",
+    color: "#a54f6b",
+    questions: [
+      { q: "I ___ my homework before dinner.", opts: ["have finished","finished","finishing"] },
+      { q: "She ___ TV when I called her.", opts: ["watched","was watching","watches"] },
+      { q: "We ___ to the party if we have time.", opts: ["go","will go","went"] },
+      { q: "He ___ in this company since 2020.", opts: ["works","worked","has worked"] },
+      { q: "There ___ a lot of people at the concert.", opts: ["was","were","is"] },
+      { q: "I don't have ___ money left.", opts: ["many","much","few"] },
+      { q: "This exercise is ___ than the last one.", opts: ["easy","easier","easiest"] },
+      { q: "She ___ go to the doctor; she's very sick.", opts: ["should","can","may"] },
+      { q: "They ___ arrive late, so don't wait.", opts: ["might","must","should"] },
+      { q: "I've lived here ___ 2015.", opts: ["for","since","from"] },
+      { q: "We ___ dinner when they arrived.", opts: ["had","were having","have"] },
+      { q: "He told me that he ___ tired.", opts: ["is","was","be"] },
+      { q: "I ___ coffee, but now I drink tea.", opts: ["used to drink","use to drink","used drink"] },
+      { q: "She asked me ___ I was okay.", opts: ["what","if","that"] },
+      { q: "The man ___ lives next door is very friendly.", opts: ["which","who","where"] },
+    ],
+    answers: [1,1,1,2,1,1,1,0,0,1,1,1,0,1,1]
+  },
+  {
+    title: "Section 4",
+    color: "#4fa58a",
+    questions: [
+      { q: "If I ___ more time, I would travel more.", opts: ["have","had","will have"] },
+      { q: "She ___ working here for five years before she left.", opts: ["has been","had been","was"] },
+      { q: "By this time tomorrow, we ___ the project.", opts: ["finish","will finish","will have finished"] },
+      { q: "He suggested ___ to the beach.", opts: ["go","going","to go"] },
+      { q: "I wish I ___ how to swim.", opts: ["know","knew","knowing"] },
+      { q: "The book ___ by a famous author.", opts: ["wrote","was written","is writing"] },
+      { q: "She ___ have forgotten about the meeting.", opts: ["must","might","should"] },
+      { q: "I'm not used to ___ up early.", opts: ["get","getting","got"] },
+      { q: "The room ___ cleaned yet.", opts: ["hasn't been","wasn't","isn't"] },
+      { q: "He denied ___ the money.", opts: ["steal","stealing","to steal"] },
+      { q: "If she ___ earlier, she wouldn't have missed the train.", opts: ["left","had left","leaves"] },
+      { q: "I'll call you as soon as I ___ home.", opts: ["get","will get","got"] },
+      { q: "That's the restaurant ___ we had dinner last week.", opts: ["which","where","who"] },
+      { q: "She speaks English ___ than I do.", opts: ["more fluent","more fluently","most fluently"] },
+      { q: "Not only ___ late, but he also forgot his keys.", opts: ["he was","was he","he is"] },
+    ],
+    answers: [1,1,2,1,1,1,1,1,0,1,1,0,1,1,1]
+  }
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+const PASS_THRESHOLD = 11; // 11/15 = ~73% (≥70%)
+let userAnswers = Array(4).fill(null).map(() => Array(15).fill(null));
+let sectionUnlocked = [true, false, false, false]; // only section 1 starts open
+let sectionSubmitted = [false, false, false, false]; // locked after grading
+let lastUnlockedSection = 0; // highest section reached
+let currentSection = 0;
+let currentQ = 0;
+let timerInterval = null;
+let secondsLeft = 45 * 60;
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function totalAnswered() {
+  let count = 0;
+  for (let si = 0; si <= lastUnlockedSection; si++)
+    count += userAnswers[si].filter(a => a !== null).length;
+  return count;
+}
+
+function totalQuestions() {
+  return (lastUnlockedSection + 1) * 15;
+}
+
+function scoreSectionNow(si) {
+  let correct = 0;
+  SECTIONS[si].questions.forEach((_, qi) => {
+    if (userAnswers[si][qi] === SECTIONS[si].answers[qi]) correct++;
+  });
+  return correct;
+}
+
+function updateProgress() {
+  const n = totalAnswered();
+  const total = totalQuestions();
+  document.getElementById('progress-fill').style.width = (n/total*100)+'%';
+  document.getElementById('progress-count').textContent = n + ' / ' + total;
+}
+
+function updateTabs() {
+  SECTIONS.forEach((s, si) => {
+    const tab = document.getElementById('tab-' + si);
+    const lockEl = document.getElementById('tab-lock-' + si);
+    const chk = document.getElementById('tab-check-' + si);
+    tab.classList.toggle('active', si === currentSection);
+    if (sectionUnlocked[si]) {
+      tab.classList.remove('locked');
+      if (lockEl) lockEl.style.display = 'none';
+      const done = userAnswers[si].filter(a => a !== null).length;
+      chk.textContent = sectionSubmitted[si] ? '✓' : (done > 0 ? done+'/15' : '');
+    } else {
+      tab.classList.add('locked');
+      if (lockEl) lockEl.style.display = '';
+      chk.textContent = '';
+    }
+  });
+}
+
+function updateGrid() {
+  const grid = document.getElementById('q-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 15; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'qnum-btn';
+    btn.textContent = i + 1;
+    if (userAnswers[currentSection][i] !== null) btn.classList.add('answered');
+    if (i === currentQ) btn.classList.add('current');
+    // disable grid nav if section already submitted
+    if (sectionSubmitted[currentSection]) {
+      btn.disabled = true;
+      btn.style.opacity = '.5';
+      btn.style.cursor = 'default';
+    } else {
+      btn.onclick = () => goToQuestion(i);
+    }
+    grid.appendChild(btn);
+  }
+}
+
+function renderQuestion() {
+  const sec = SECTIONS[currentSection];
+  const q = sec.questions[currentQ];
+  document.getElementById('q-number').textContent =
+    'Section ' + (currentSection+1) + '  ·  Question ' + (currentQ+1) + ' of 15';
+  document.getElementById('q-text').innerHTML = q.q.replace(/___/, '<em>___</em>');
+
+  const list = document.getElementById('options-list');
+  list.innerHTML = '';
+  const letters = ['A','B','C'];
+  q.opts.forEach((opt, oi) => {
+    const lbl = document.createElement('label');
+    lbl.className = 'option-label' + (userAnswers[currentSection][currentQ] === oi ? ' selected' : '');
+    lbl.innerHTML = `
+      <span class="opt-letter">${letters[oi]}</span>
+      <input type="radio" name="q" value="${oi}" ${userAnswers[currentSection][currentQ] === oi ? 'checked' : ''}>
+      ${opt}`;
+    if (!sectionSubmitted[currentSection]) lbl.onclick = () => selectOption(oi);
+    list.appendChild(lbl);
+  });
+
+  // nav buttons
+  const isFirstEver = currentSection === 0 && currentQ === 0;
+  const isLastQ = currentQ === 14;
+  const isFinalSection = currentSection === 3;
+  const isLastEver = isFinalSection && isLastQ;
+
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const btnSubmit = document.getElementById('btn-submit');
+  const btnSectionSubmit = document.getElementById('btn-section-submit');
+
+  btnPrev.disabled = isFirstEver;
+
+  // "Next" goes to previous questions within section; never crosses section boundary
+  btnNext.style.display = (!isLastQ) ? 'inline-block' : 'none';
+
+  // At Q15: show "Submit Section" (green) unless it's the very last section
+  btnSectionSubmit.style.display = (isLastQ && !isFinalSection && !sectionSubmitted[currentSection]) ? 'inline-block' : 'none';
+
+  // Final submit only on last section, last question
+  btnSubmit.style.display = (isLastEver && !sectionSubmitted[currentSection]) ? 'inline-block' : 'none';
+
+  updateGrid();
+  updateTabs();
+  updateProgress();
+}
+
+function selectOption(oi) {
+  if (sectionSubmitted[currentSection]) return;
+  userAnswers[currentSection][currentQ] = oi;
+  renderQuestion();
+}
+
+function goToQuestion(qi) {
+  if (sectionSubmitted[currentSection]) return;
+  currentQ = qi;
+  renderQuestion();
+}
+
+function tryGoToSection(si) {
+  if (!sectionUnlocked[si]) return; // locked — do nothing
+  currentSection = si;
+  currentQ = 0;
+  renderQuestion();
+}
+
+// Keep old name for prev button (only goes backward within section)
+function navigate(dir) {
+  if (dir === 1) {
+    // forward — only within section
+    if (currentQ < 14) { currentQ++; renderQuestion(); }
+  } else {
+    // backward — can cross section boundary going back
+    let newQ = currentQ - 1;
+    let newS = currentSection;
+    if (newQ < 0) {
+      newS--;
+      if (newS < 0) return;
+      if (!sectionUnlocked[newS]) return;
+      newQ = 14;
+    }
+    currentSection = newS;
+    currentQ = newQ;
+    renderQuestion();
+  }
+}
+
+// Called when student clicks "Submit Section →"
+function submitSection() {
+  // Check all 15 answered
+  const unanswered = userAnswers[currentSection].filter(a => a === null).length;
+  if (unanswered > 0) {
+    document.getElementById('confirm-msg').innerHTML =
+      `You have <strong>${unanswered} unanswered question${unanswered>1?'s':''}</strong> in this section. Please answer all questions before moving on.`;
+    document.getElementById('confirm-overlay').classList.add('show');
+    return;
+  }
+
+  const score = scoreSectionNow(currentSection);
+  sectionSubmitted[currentSection] = true;
+
+  if (score >= PASS_THRESHOLD) {
+    // PASS — unlock next section
+    const next = currentSection + 1;
+    sectionUnlocked[next] = true;
+    lastUnlockedSection = next;
+    // Show a brief pass notice then move on
+    currentSection = next;
+    currentQ = 0;
+    renderQuestion();
+  } else {
+    // FAIL — show fail overlay, test ends here
+    clearInterval(timerInterval);
+    document.getElementById('fail-score-display').textContent = score + ' / 15';
+    document.getElementById('fail-sub-text').textContent =
+      'You scored ' + score + ' out of 15 on Section ' + currentSection +
+      '. You need at least 11 correct (70%) to unlock the next section. Your test has ended here.';
+    document.getElementById('fail-overlay').classList.add('show');
+  }
+}
+
+function showFailResults() {
+  document.getElementById('fail-overlay').classList.remove('show');
+  document.getElementById('test-page').style.display = 'none';
+  buildResults();
+  document.getElementById('results-page').classList.add('show');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ── TIMER ─────────────────────────────────────────────────────────────────────
+function startTimer() {
+  timerInterval = setInterval(() => {
+    secondsLeft--;
+    const m = Math.floor(secondsLeft / 60).toString().padStart(2,'0');
+    const s = (secondsLeft % 60).toString().padStart(2,'0');
+    const box = document.getElementById('timer-box');
+    box.textContent = '⏱ ' + m + ':' + s;
+    if (secondsLeft <= 120) box.classList.add('warn');
+    if (secondsLeft <= 0) { clearInterval(timerInterval); submitTest(); }
+  }, 1000);
+}
+
+// ── FLOW ──────────────────────────────────────────────────────────────────────
+function startTest() {
+  document.getElementById('welcome-page').style.display = 'none';
+  document.getElementById('test-page').classList.add('show');
+  currentSection = 0; currentQ = 0;
+  userAnswers = Array(4).fill(null).map(() => Array(15).fill(null));
+  sectionUnlocked = [true, false, false, false];
+  sectionSubmitted = [false, false, false, false];
+  lastUnlockedSection = 0;
+  secondsLeft = 45 * 60;
+  startTimer();
+  renderQuestion();
+}
+
+function showConfirm() {
+  const unanswered = userAnswers[currentSection].filter(a => a === null).length;
+  const msg = unanswered > 0
+    ? `You have <strong>${unanswered} unanswered question${unanswered>1?'s':''}</strong>. Please go back and answer them.`
+    : 'You\'ve answered all questions. Ready to submit your final results?';
+  document.getElementById('confirm-msg').innerHTML = msg;
+  document.getElementById('confirm-overlay').classList.add('show');
+}
+
+function hideConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('show');
+}
+
+function submitTest() {
+  // Final section submit
+  const unanswered = userAnswers[currentSection].filter(a => a === null).length;
+  if (unanswered > 0) { showConfirm(); return; }
+  sectionSubmitted[currentSection] = true;
+  clearInterval(timerInterval);
+  hideConfirm();
+  document.getElementById('test-page').style.display = 'none';
+  buildResults();
+  document.getElementById('results-page').classList.add('show');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function restartTest() {
+  document.getElementById('results-page').classList.remove('show');
+  document.getElementById('welcome-page').style.display = 'block';
+  document.getElementById('test-page').classList.remove('show');
+  document.getElementById('test-page').style.display = '';
+  document.getElementById('timer-box').textContent = '⏱ --:--';
+  document.getElementById('timer-box').classList.remove('warn');
+  // Reset lock icons
+  [1,2,3].forEach(si => {
+    const lock = document.getElementById('tab-lock-'+si);
+    if (lock) lock.style.display = '';
+    document.getElementById('tab-'+si).classList.add('locked');
+  });
+}
+
+// ── RESULTS ───────────────────────────────────────────────────────────────────
+function getLevel(score, sectionsCompleted) {
+  // Level based on how far they got and their score
+  if (sectionsCompleted === 1) return score >= PASS_THRESHOLD ? 'A2 — Elementary' : 'A1 — Beginner';
+  if (sectionsCompleted === 2) return score >= PASS_THRESHOLD ? 'B1 — Intermediate' : 'A2 — Elementary';
+  if (sectionsCompleted === 3) return score >= PASS_THRESHOLD ? 'B2 — Upper Intermediate' : 'B1 — Intermediate';
+  // all 4 completed
+  const total = score;
+  if (total <= 45) return 'B2 — Upper Intermediate';
+  if (total <= 55) return 'C1 — Advanced';
+  return 'C2 — Proficient';
+}
+
+function buildResults() {
+  // Only score sections that were submitted
+  const sectionScores = SECTIONS.map((sec, si) => {
+    if (!sectionSubmitted[si]) return null;
+    let correct = 0;
+    sec.questions.forEach((_, qi) => {
+      if (userAnswers[si][qi] === SECTIONS[si].answers[qi]) correct++;
+    });
+    return correct;
+  });
+
+  const completedSections = sectionScores.filter(s => s !== null);
+  const sectionsCompleted = completedSections.length;
+  const total = completedSections.reduce((a,b)=>a+b,0);
+  const totalPossible = sectionsCompleted * 15;
+  const lastScore = completedSections[completedSections.length - 1];
+
+  document.getElementById('total-score').textContent = total;
+  document.querySelector('.out-of').textContent = `out of ${totalPossible} correct (${sectionsCompleted} section${sectionsCompleted>1?'s':''} completed)`;
+  document.getElementById('level-badge').textContent = getLevel(lastScore, sectionsCompleted);
+
+  // section score cards — only completed
+  const scDiv = document.getElementById('section-scores');
+  scDiv.innerHTML = '';
+  scDiv.style.gridTemplateColumns = `repeat(${sectionsCompleted}, 1fr)`;
+  SECTIONS.forEach((sec, si) => {
+    if (!sectionSubmitted[si]) return;
+    const sc = sectionScores[si];
+    const passed = sc >= PASS_THRESHOLD;
+    const card = document.createElement('div');
+    card.className = 'score-card';
+    card.innerHTML = `
+      <div class="sc-label">${sec.title}</div>
+      <div class="sc-num" style="color:${passed ? sec.color : 'var(--wrong)'}">${sc}<span style="font-size:1rem;color:#aaa">/15</span></div>
+      <div style="font-size:.75rem;font-weight:700;margin:4px 0;color:${passed?'var(--correct)':'var(--wrong)'}">${passed?'✓ Passed':'✗ Did not pass'}</div>
+      <div class="sc-bar"><div class="sc-fill" style="width:${sc/15*100}%;background:${passed?sec.color:'var(--wrong)'}"></div></div>`;
+    scDiv.appendChild(card);
+  });
+
+  // detailed review — only completed sections
+  const revDiv = document.getElementById('review-sections');
+  revDiv.innerHTML = '';
+  SECTIONS.forEach((sec, si) => {
+    if (!sectionSubmitted[si]) return;
+    const sc = sectionScores[si];
+    const wrapper = document.createElement('div');
+    wrapper.className = 'review-section';
+
+    const header = document.createElement('div');
+    header.className = 'review-header';
+    header.style.background = sec.color;
+    header.innerHTML = `
+      <h3>${sec.title}</h3>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="score-pill">${sc} / 15 correct</span>
+        <span class="toggle-arrow">▾</span>
+      </div>`;
+    header.onclick = () => {
+      header.classList.toggle('open');
+      body.classList.toggle('open');
+    };
+
+    const body = document.createElement('div');
+    body.className = 'review-body';
+
+    const letters = ['A','B','C'];
+    sec.questions.forEach((q, qi) => {
+      const correctIdx = sec.answers[qi];
+      const studentIdx = userAnswers[si][qi];
+      const isCorrect = studentIdx === correctIdx;
+      const isUnanswered = studentIdx === null;
+
+      const item = document.createElement('div');
+      item.className = 'review-item';
+
+      let numClass = isUnanswered ? 'unanswered' : (isCorrect ? 'correct' : 'wrong');
+      let icon = isUnanswered ? '?' : (isCorrect ? '✓' : '✗');
+
+      let tagsHTML = '';
+      if (isUnanswered) {
+        tagsHTML += `<span class="ri-answer-tag student-none">Not answered</span>`;
+      } else {
+        tagsHTML += `<span class="ri-answer-tag ${isCorrect ? 'student-correct' : 'student-wrong'}">
+          Your answer: ${letters[studentIdx]}) ${q.opts[studentIdx]}
+        </span>`;
+      }
+      if (!isCorrect) {
+        tagsHTML += `<span class="ri-answer-tag correct-ans">
+          Correct: ${letters[correctIdx]}) ${q.opts[correctIdx]}
+        </span>`;
+      }
+
+      item.innerHTML = `
+        <div class="ri-num ${numClass}">${icon}</div>
+        <div class="ri-content">
+          <div class="ri-q"><strong>Q${qi+1}.</strong> ${q.q.replace(/___/, '<u>___</u>')}</div>
+          <div class="ri-answers">${tagsHTML}</div>
+        </div>`;
+
+      body.appendChild(item);
+    });
+
+    wrapper.appendChild(header);
+    wrapper.appendChild(body);
+    revDiv.appendChild(wrapper);
+
+    // auto-open last section (the one they struggled with)
+    header.classList.add('open');
+    body.classList.add('open');
+  });
+}
+</script>
+</body>
+</html>
