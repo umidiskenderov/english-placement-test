@@ -604,7 +604,7 @@
     <div class="info-item"><div class="ii-num">4</div><div class="ii-label">Sections</div></div>
     <div class="info-item"><div class="ii-num">60</div><div class="ii-label">Questions</div></div>
     <div class="info-item"><div class="ii-num">45</div><div class="ii-label">Minutes</div></div>
-    <div class="info-item"><div class="ii-num">A1–C1</div><div class="ii-label">Levels</div></div>
+    <div class="info-item"><div class="ii-num">A1–B2</div><div class="ii-label">Levels</div></div>
   </div>
   <div class="name-wrap">
     <label for="student-name">Your Full Name</label>
@@ -1098,16 +1098,15 @@ function restartTest() {
 }
 
 // ── RESULTS ───────────────────────────────────────────────────────────────────
-function getLevel(score, sectionsCompleted) {
-  // Level based on how far they got and their score
-  if (sectionsCompleted === 1) return score >= PASS_THRESHOLD ? 'A2 — Elementary' : 'A1 — Beginner';
-  if (sectionsCompleted === 2) return score >= PASS_THRESHOLD ? 'B1 — Intermediate' : 'A2 — Elementary';
-  if (sectionsCompleted === 3) return score >= PASS_THRESHOLD ? 'B2 — Upper Intermediate' : 'B1 — Intermediate';
-  // all 4 completed
-  const total = score;
-  if (total <= 45) return 'B2 — Upper Intermediate';
-  if (total <= 55) return 'C1 — Advanced';
-  return 'C2 — Proficient';
+function getLevel(score, sectionsCompleted, passed) {
+  // Each section = one level. Max is B2 (Section 4).
+  // If they passed the section they're at least that level.
+  // If they failed (or didn't reach), they're the level below.
+  if (sectionsCompleted === 1) return passed ? 'A2 — Elementary'       : 'A1 — Beginner';
+  if (sectionsCompleted === 2) return passed ? 'B1 — Pre-Intermediate' : 'A2 — Elementary';
+  if (sectionsCompleted === 3) return passed ? 'B2 — Intermediate'     : 'B1 — Pre-Intermediate';
+  if (sectionsCompleted === 4) return passed ? 'B2 — Intermediate'     : 'B2 — Intermediate';
+  return 'A1 — Beginner';
 }
 
 function buildResults(sendToSheet = true) {
