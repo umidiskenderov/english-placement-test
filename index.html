@@ -997,27 +997,21 @@ function sendResults(sectionScores, total, sectionsCompleted, level) {
     sectionsCompleted,
     level
   };
-  const body = JSON.stringify(payload);
-  const blob = new Blob([body], { type: 'application/json' });
-  const sent = navigator.sendBeacon(SHEET_URL, blob);
-  if (!sent) {
-    fetch(SHEET_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body
-    }).catch(() => {
-      setTimeout(() => {
-        fetch(SHEET_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body
-        }).catch(e => console.warn('Could not send results:', e));
-      }, 3000);
-    });
-  }
+  fetch(SHEET_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: JSON.stringify(payload)
+  }).catch(() => {
+    setTimeout(() => {
+      fetch(SHEET_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify(payload)
+      });
+    }, 3000);
+  });
 }
+  
 function showFailResults() {
   document.getElementById('fail-overlay').classList.remove('show');
   document.getElementById('test-page').style.display = 'none';
