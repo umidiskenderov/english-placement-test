@@ -986,8 +986,7 @@ function submitSection() {
 }
 
 // ── SEND RESULTS TO GOOGLE SHEET ──────────────────────────────────────────────
-async function sendResults(sectionScores, total, sectionsCompleted, level) {
-  document.getElementById('sending-overlay').classList.add('show');
+function sendResults(sectionScores, total, sectionsCompleted, level) {
   const payload = {
     name: studentName,
     s1: sectionScores[0],
@@ -998,19 +997,27 @@ async function sendResults(sectionScores, total, sectionsCompleted, level) {
     sectionsCompleted,
     level
   };
-  try {
-    await fetch(SHEET_URL, {
+  const body = JSON.stringify(payload);
+  const blob = new Blob([body], { type: 'application/json' });
+  const sent = navigator.sendBeacon(SHEET_URL, blob);
+  if (!sent) {
+    fetch(SHEET_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body
+    }).catch(() => {
+      setTimeout(() => {
+        fetch(SHEET_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body
+        }).catch(e => console.warn('Could not send results:', e));
+      }, 3000);
     });
-  } catch (err) {
-    console.warn('Could not send results:', err);
   }
-  document.getElementById('sending-overlay').classList.remove('show');
 }
-
 function showFailResults() {
   document.getElementById('fail-overlay').classList.remove('show');
   document.getElementById('test-page').style.display = 'none';
@@ -1026,7 +1033,7 @@ function submitTest() {
   clearInterval(timerInterval);
   hideConfirm();
   document.getElementById('test-page').style.display = 'none';
-  buildResults(false);
+  buildResults(true);
   document.getElementById('results-page').classList.add('show');
   window.scrollTo({top:0, behavior:'smooth'});
 }
